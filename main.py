@@ -31,6 +31,8 @@ def format_time(seconds):
         return f"{seconds:.3f}s"
     elif ARGS.format == "m":
         return f"{seconds/60:.3f}m"
+    elif ARGS.format == "h":
+        return f"{seconds/(60 * 60):.3f}h"
     else:  # d: days for sure because parser check the arg!
         return f"{seconds/(24 * 60 * 60):.3f}d"
 
