@@ -15,7 +15,7 @@ COMMAND = (
 
 
 def summerize_filename(filename):
-    if len(filename) > (proper := ((WIDTH // 2) + 5)):
+    if len(filename) > (proper := ((WIDTH // 2) + 10)):
         return filename[:proper] + " ..."
     return filename
 
@@ -148,7 +148,8 @@ async def main():
     if len(ARGS.path_file) > 1 or os.path.isfile(ARGS.path_file[0]):
         files = ARGS.path_file
     else:
-        files = os.listdir(ARGS.path_file[0])
+        os.chdir(ARGS.path_file[0])
+        files = os.listdir()
 
     WIDTH = len(max(files, key=len)) + 5
     WIDTH = min(WIDTH, os.get_terminal_size()[0] // 2) + 1
