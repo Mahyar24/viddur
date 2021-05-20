@@ -20,6 +20,21 @@ def summerize_filename(filename):
     return filename
 
 
+def format_time(seconds):
+    if ARGS.format is None or ARGS.format == "default":
+        gm_time = time.gmtime(seconds)
+        res = ""
+        if (day := gm_time.tm_mday) > 1:
+            res = f"{day - 1} day, "
+        return res + time.strftime("%H:%M:%S", gm_time)
+    elif ARGS.format == "s":
+        return f"{seconds:.3f}s"
+    elif ARGS.format == "m":
+        return f"{seconds/60:.3f}m"
+    else:  # d: days for sure because parser check the arg!
+        return f"{seconds/(24 * 60 * 60):.3f}d"
+
+
 def checking_args(args, parser):
     if not args.verbose:
         if args.sort or args.reverse:
@@ -46,6 +61,15 @@ def parsing_args():
         help="Program doesn't suggest mime types and take all files as videos.",
         action="store_true",
     )
+
+    parser.add_argument(
+        "-f",
+        "--format",
+        help="Format the duration of the file in [S]econds/[M]inutes/[H]ours/[D]ays or [default]",
+        type=lambda x: x.lower()[0] if x.lower() != "default" else "default",
+        choices=["default", "s", "m", "h", "d"],
+    )
+
     group_vq.add_argument(
         "-v",
         "--verbose",
@@ -74,14 +98,6 @@ def parsing_args():
     )
 
     return checking_args(parser.parse_args(), parser)
-
-
-def format_time(seconds):
-    gm_time = time.gmtime(seconds)
-    res = ""
-    if (day := gm_time.tm_mday) > 1:
-        res = f"{day - 1} day, "
-    return res + time.strftime("%H:%M:%S", gm_time)
 
 
 async def calc(file):
