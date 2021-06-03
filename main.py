@@ -1,10 +1,9 @@
-import os
-import mimetypes
-import time
-import asyncio
 import argparse
+import asyncio
+import mimetypes
+import os
 import sys
-
+import time
 
 TOTAL = 0
 FILES_DUR = {}
