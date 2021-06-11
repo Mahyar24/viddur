@@ -1,3 +1,11 @@
+#! /usr/bin/python3.8
+
+# Run this code for see the summed duration of videos.
+# Compatible with python3.8+. No third-party library is required, implemented in pure python.
+# Make sure that you have required permissions and "ffprobe" is already installed.
+# Mahyar@Mahyar24.com, Fri 11 Jun 2021.
+
+
 import argparse
 import asyncio
 import mimetypes
@@ -11,15 +19,22 @@ WIDTH = 0
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
+# This Command is all this program based on. ffprobe extract the metadata of the file.
 
 
 def summerize_filename(filename: str) -> str:
+    """
+    To summerize the name of the file if width of terminal was not enough wide.
+    """
     if len(filename) > (proper := ((WIDTH // 2) + 10)):
         return filename[:proper] + " ..."
     return filename
 
 
 def format_time(seconds: float) -> str:
+    """
+    Format the time based of cli args. available formats are: default, Seconds, Minutes, Hours, Days.
+    """
     if ARGS.format is None or ARGS.format == "default":
         gm_time = time.gmtime(seconds)
         res = ""
@@ -39,6 +54,9 @@ def format_time(seconds: float) -> str:
 def checking_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> argparse.Namespace:
+    """
+    if Reversed or Sorted argument was passed without Verbose arg activated, throw an error.
+    """
     if not args.verbose:
         if args.sort or args.reverse:
             parser.error(
@@ -48,6 +66,9 @@ def checking_args(
 
 
 def parsing_args() -> argparse.Namespace:
+    """
+    Parsing the passed arguments, read help (-h, --help) for further information.
+    """
     parser = argparse.ArgumentParser()
     group_vq = parser.add_mutually_exclusive_group()
     group_sr = parser.add_mutually_exclusive_group()
@@ -104,6 +125,9 @@ def parsing_args() -> argparse.Namespace:
 
 
 async def calc(file: str) -> int:
+    """
+    Get a filename and extract the duration of it. it will return 0 for successful operation and 1 for failure.
+    """
     global TOTAL
     global FILES_DUR
 
@@ -116,7 +140,9 @@ async def calc(file: str) -> int:
         )
         stdout, _ = await process.communicate()
 
-        if not process.returncode and stdout != b"N/A\n":
+        if (
+            not process.returncode and stdout != b"N/A\n"
+        ):  # In some cases ffprobe return a successful 0 code but the duration is N/A.
             duration = float(stdout)
             TOTAL += float(stdout)
 
@@ -146,6 +172,9 @@ async def calc(file: str) -> int:
 
 
 def sorted_msgs() -> None:
+    """
+    Printing Sorted durations.
+    """
     sorted_dict = {
         k: v
         for k, v in sorted(
@@ -164,22 +193,29 @@ def sorted_msgs() -> None:
 async def main() -> int:
     global WIDTH
 
-    if len(ARGS.path_file) > 1 or os.path.isfile(ARGS.path_file[0]):
+    if len(ARGS.path_file) > 1 or os.path.isfile(
+        ARGS.path_file[0]
+    ):  # Check if it's a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi) or a single filename.
         files = ARGS.path_file
-    else:
+    else:  # it's a directory.
         os.chdir(ARGS.path_file[0])
         files = os.listdir()
 
     WIDTH = len(max(files, key=len)) + 5
-    WIDTH = min(WIDTH, os.get_terminal_size()[0] // 2) + 1
+    WIDTH = (
+        min(WIDTH, os.get_terminal_size()[0] // 2) + 1
+    )  # Some Customization for more elegant output.
 
-    tasks = [asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)]
+    tasks = [
+        asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)
+    ]  # the if statement is necessary because there's a possibility of existence of a nested directory or passing -
+    # two directory names.
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
             sorted_msgs()
-        return any(results)
-    return 1
+        return any(results)  # Check to see if any of the checked file is failed; for the return code.
+    return 1  # bad arguments -> returning failure return code.
 
 
 if __name__ == "__main__":
