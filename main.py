@@ -5,21 +5,21 @@ import os
 import sys
 import time
 
-TOTAL = 0
-FILES_DUR = {}
+TOTAL = 0.0
+FILES_DUR: dict[str, float] = {}
 WIDTH = 0
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
 
 
-def summerize_filename(filename):
+def summerize_filename(filename: str) -> str:
     if len(filename) > (proper := ((WIDTH // 2) + 10)):
         return filename[:proper] + " ..."
     return filename
 
 
-def format_time(seconds):
+def format_time(seconds: float) -> str:
     if ARGS.format is None or ARGS.format == "default":
         gm_time = time.gmtime(seconds)
         res = ""
@@ -36,7 +36,9 @@ def format_time(seconds):
         return f"{seconds/(24 * 60 * 60):.3f}d"
 
 
-def checking_args(args, parser):
+def checking_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> argparse.Namespace:
     if not args.verbose:
         if args.sort or args.reverse:
             parser.error(
@@ -45,7 +47,7 @@ def checking_args(args, parser):
     return args
 
 
-def parsing_args():
+def parsing_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     group_vq = parser.add_mutually_exclusive_group()
     group_sr = parser.add_mutually_exclusive_group()
@@ -101,7 +103,7 @@ def parsing_args():
     return checking_args(parser.parse_args(), parser)
 
 
-async def calc(file):
+async def calc(file: str) -> int:
     global TOTAL
     global FILES_DUR
 
@@ -125,11 +127,13 @@ async def calc(file):
                     )
                 else:
                     FILES_DUR[file] = duration
+            return 0
         else:
             if not ARGS.quiet:
                 print(
                     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} cannot get examined.'
                 )
+            return 1
     else:
         if ARGS.verbose:
             if not (ARGS.sort or ARGS.reverse):
@@ -138,12 +142,10 @@ async def calc(file):
                 )
             else:
                 FILES_DUR[file] = False
-        return 1
-
-    return process.returncode
+        return 0
 
 
-def sorted_msgs():
+def sorted_msgs() -> None:
     sorted_dict = {
         k: v
         for k, v in sorted(
@@ -159,7 +161,7 @@ def sorted_msgs():
             print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} cannot get examined.')
 
 
-async def main():
+async def main() -> int:
     global WIDTH
 
     if len(ARGS.path_file) > 1 or os.path.isfile(ARGS.path_file[0]):
