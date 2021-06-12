@@ -13,7 +13,7 @@ import os
 import sys
 import time
 
-TOTAL = 0.0
+TOTAL = 0.0  # Global variables are async safe.
 FILES_DUR: dict[str, float] = {}
 WIDTH = 0
 COMMAND = (
@@ -205,6 +205,7 @@ async def main() -> int:
     WIDTH = (
         min(WIDTH, os.get_terminal_size()[0] // 2) + 1
     )  # Some Customization for more elegant output.
+    # An alternative better way is to use Rich module; but we want to keep the program atomic.
 
     tasks = [
         asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)
