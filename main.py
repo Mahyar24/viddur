@@ -153,26 +153,17 @@ async def calc(file: str) -> int:
 
             if ARGS.verbose:
                 if not (ARGS.sort or ARGS.reverse):
-                    # print(
-                    #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} {format_time(duration)}'
-                    # )
                     pretty_print(file, format_time(duration))
                 else:
                     FILES_DUR[file] = duration
             return 0
         else:
             if not ARGS.quiet:
-                # print(
-                #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} cannot get examined.'
-                # )
                 pretty_print(file, "cannot get examined.")
             return 1
     else:
         if ARGS.verbose:
             if not (ARGS.sort or ARGS.reverse):
-                # print(
-                #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} is not recognized as a media.'
-                # )
                 pretty_print(file, "is not recognized as a media.")
             else:
                 FILES_DUR[file] = False
@@ -193,10 +184,8 @@ def sorted_msgs() -> None:
     }
     for k, v in sorted_dict.items():
         if v:
-            # print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} {format_time(v)}')
             pretty_print(k, format_time(v))
         else:
-            # print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} cannot get examined.')
             pretty_print(k, "cannot get examined.")
 
 
