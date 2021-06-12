@@ -1,7 +1,7 @@
-#! /usr/bin/python3.8
+#! /usr/bin/python3.9
 
 # Run this code for see the summed duration of videos.
-# Compatible with python3.8+. No third-party library is required, implemented in pure python.
+# Compatible with python3.9+. No third-party library is required, implemented in pure python.
 # Make sure that you have required permissions and "ffprobe" is already installed.
 # Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 
@@ -19,7 +19,7 @@ WIDTH = 0
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
-# This Command is all this program based on. ffprobe extract the metadata of the file.
+# This Command is all this program based on. "ffprobe" extract the metadata of the file.
 
 
 def summerize_filename(filename: str) -> str:
@@ -180,7 +180,7 @@ def sorted_msgs() -> None:
         for k, v in sorted(
             FILES_DUR.items(),
             key=lambda x: x[1],
-            reverse=True if ARGS.reverse else False,
+            reverse=ARGS.reverse,
         )
     }
     for k, v in sorted_dict.items():
@@ -214,7 +214,9 @@ async def main() -> int:
     if tasks:
         if ARGS.sort or ARGS.reverse:
             sorted_msgs()
-        return any(results)  # Check to see if any of the checked file is failed; for the return code.
+        return any(
+            results
+        )  # Check to see if any of the checked file is failed; for the return code.
     return 1  # bad arguments -> returning failure return code.
 
 
