@@ -11,24 +11,29 @@ import asyncio
 import mimetypes
 import os
 import sys
+import textwrap
 import time
 
 TOTAL = 0.0  # Global variables are async safe.
+PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
-WIDTH = 0
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
 # This Command is all this program based on. "ffprobe" extract the metadata of the file.
 
 
-def summerize_filename(filename: str) -> str:
+def pretty_print(
+    file_name: str, detail: str
+) -> None:  # One Alternative is to use Rich; but i want to keep it simple and independent.
     """
-    To summerize the name of the file if width of terminal was not enough wide.
+    Shortening and printing output based on terminal width.
     """
-    if len(filename) > (proper := ((WIDTH // 2) + 10)):
-        return filename[:proper] + " ..."
-    return filename
+    width = os.get_terminal_size()[0]
+    shorted_file_name = textwrap.shorten(
+        file_name, width=max(width // 2, len(PLACEHOLDER)), placeholder=PLACEHOLDER
+    )
+    print(f"{f'{shorted_file_name!r}:':<{max(width // 4, 20)}} {detail}")
 
 
 def format_time(seconds: float) -> str:
@@ -148,24 +153,27 @@ async def calc(file: str) -> int:
 
             if ARGS.verbose:
                 if not (ARGS.sort or ARGS.reverse):
-                    print(
-                        f'{f"{summerize_filename(file)!r}:":<{WIDTH}} {format_time(duration)}'
-                    )
+                    # print(
+                    #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} {format_time(duration)}'
+                    # )
+                    pretty_print(file, format_time(duration))
                 else:
                     FILES_DUR[file] = duration
             return 0
         else:
             if not ARGS.quiet:
-                print(
-                    f'{f"{summerize_filename(file)!r}:":<{WIDTH}} cannot get examined.'
-                )
+                # print(
+                #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} cannot get examined.'
+                # )
+                pretty_print(file, "cannot get examined.")
             return 1
     else:
         if ARGS.verbose:
             if not (ARGS.sort or ARGS.reverse):
-                print(
-                    f'{f"{summerize_filename(file)!r}:":<{WIDTH}} is not recognized as a media.'
-                )
+                # print(
+                #     f'{f"{summerize_filename(file)!r}:":<{WIDTH}} is not recognized as a media.'
+                # )
+                pretty_print(file, "is not recognized as a media.")
             else:
                 FILES_DUR[file] = False
         return 0
@@ -185,14 +193,14 @@ def sorted_msgs() -> None:
     }
     for k, v in sorted_dict.items():
         if v:
-            print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} {format_time(v)}')
+            # print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} {format_time(v)}')
+            pretty_print(k, format_time(v))
         else:
-            print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} cannot get examined.')
+            # print(f'{f"{summerize_filename(k)!r}:":<{WIDTH}} cannot get examined.')
+            pretty_print(k, "cannot get examined.")
 
 
 async def main() -> int:
-    global WIDTH
-
     if len(ARGS.path_file) > 1 or os.path.isfile(
         ARGS.path_file[0]
     ):  # Check if it's a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi) or a single filename.
@@ -200,12 +208,6 @@ async def main() -> int:
     else:  # it's a directory.
         os.chdir(ARGS.path_file[0])
         files = os.listdir()
-
-    WIDTH = len(max(files, key=len)) + 5
-    WIDTH = (
-        min(WIDTH, os.get_terminal_size()[0] // 2) + 1
-    )  # Some Customization for more elegant output.
-    # An alternative better way is to use Rich module; but we want to keep the program atomic.
 
     tasks = [
         asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)
