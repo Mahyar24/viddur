@@ -24,7 +24,10 @@ COMMAND = (
 # This Command is all this program based on. "ffprobe" extract the metadata of the file.
 
 
-def check_ffprobe():  # This function check if "ffprobe" is installed or not. shutil.which is cross platform solution.
+def check_ffprobe() -> bool:
+    """
+    This function check if "ffprobe" is installed or not. shutil.which is cross platform solution.
+    """
     if shutil.which("ffprobe") is None:
         return False
     return True
@@ -221,7 +224,7 @@ async def main() -> int:
 
 if __name__ == "__main__":
     ARGS = parsing_args()
-    assert check_ffprobe(), '"ffprobe" is not installed.'
+    assert check_ffprobe(), '"ffprobe" is not found.'
     exit_code = asyncio.run(main())
     prefix = "" if ARGS.quiet else "\nTotal Time is: "
     print(prefix + format_time(TOTAL))
