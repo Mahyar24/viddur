@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import mimetypes
 import os
+import shutil
 import sys
 import textwrap
 import time
@@ -21,6 +22,12 @@ COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
 # This Command is all this program based on. "ffprobe" extract the metadata of the file.
+
+
+def check_ffprobe():  # This function check if "ffprobe" is installed or not. shutil.which is cross platform solution.
+    if shutil.which("ffprobe") is None:
+        return False
+    return True
 
 
 def pretty_print(
@@ -214,6 +221,7 @@ async def main() -> int:
 
 if __name__ == "__main__":
     ARGS = parsing_args()
+    assert check_ffprobe(), '"ffprobe" is not installed.'
     exit_code = asyncio.run(main())
     prefix = "" if ARGS.quiet else "\nTotal Time is: "
     print(prefix + format_time(TOTAL))
