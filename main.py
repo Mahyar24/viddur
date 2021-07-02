@@ -204,14 +204,17 @@ async def main() -> int:
         ARGS.path_file[0]
     ):  # Check if it's a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi) or a single filename.
         files = ARGS.path_file
-    else:  # it's a directory.
-        os.chdir(ARGS.path_file[0])
-        files = os.listdir()
+    else:
+        if os.path.isdir((directory := ARGS.path_file[0])):
+            os.chdir(directory)
+            files = os.listdir()
+        else:  # in case of a single invalid argument (e.g. viddur fake) we should fail.
+            raise NotADirectoryError(f"{directory!r} is not a valid directory.")
 
     tasks = [
         asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)
     ]  # the if statement is necessary because there's a possibility of existence of a nested directory or passing -
-    # two directory names.
+    # two directory names (bad user input).
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
