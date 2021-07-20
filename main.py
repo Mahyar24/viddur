@@ -61,7 +61,7 @@ def format_time(seconds: float) -> str:
         res = ""
         days, remainder = divmod(seconds, 86_400)  # 24 * 60 * 60 = 86,400
         if days > 0:
-            res = f"{int(days) - 1} day, "
+            res = f"{int(days)} day, "
         return res + time.strftime("%H:%M:%S", time.gmtime(remainder))
     elif ARGS.format == "s":
         return f"{seconds:.3f}s"
