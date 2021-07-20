@@ -18,6 +18,7 @@ import time
 TOTAL = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
+SEM_NUM = 25  # Semaphore number for limiting simultaneously open files.
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
@@ -188,6 +189,14 @@ async def calc(file: str) -> int:
         return 0
 
 
+async def calc_with_cautious(file: str, sem: asyncio.locks.Semaphore) -> int:
+    """
+    Calculate length of file with cautious of not opening too much file at the same time.
+    """
+    async with sem:
+        return await calc(file)
+
+
 def sorted_msgs() -> None:
     """
     Printing Sorted durations.
@@ -242,7 +251,8 @@ def cleanup_inputs() -> list[str]:
 
 async def main() -> int:
     files = cleanup_inputs()
-    tasks = [asyncio.create_task(calc(file)) for file in files]
+    sem = asyncio.Semaphore(SEM_NUM)
+    tasks = [asyncio.create_task(calc_with_cautious(file, sem)) for file in files]
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
