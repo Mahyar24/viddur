@@ -56,11 +56,15 @@ def pretty_print(
     """
     Shortening and printing output based on terminal width.
     """
-
-    shorted_file_name = textwrap.shorten(
-        file_name, width=max(ARGS.width // 2, len(PLACEHOLDER)), placeholder=PLACEHOLDER
-    )
-    print(f"{f'{shorted_file_name!r}:':<{max(ARGS.width // 4, 20)}} {detail}")
+    if ARGS.simple_output:
+        print(f"{file_name}: {detail}")
+    else:
+        shorted_file_name = textwrap.shorten(
+            file_name,
+            width=max(ARGS.width // 2, len(PLACEHOLDER)),
+            placeholder=PLACEHOLDER,
+        )
+        print(f"{f'{shorted_file_name!r}:':<{max(ARGS.width // 4, 20)}} {detail}")
 
 
 def format_time(seconds: float) -> str:
@@ -148,6 +152,12 @@ def parsing_args() -> argparse.Namespace:
         help="Width of your terminal size. (for shortening filenames)",
         type=int,
         default=default_terminal_width(),
+    )
+
+    parser.add_argument(
+        "--simple-output",
+        help="Deactivate pretty printing and shortening of filenames.",
+        action="store_true",
     )
 
     group_vq.add_argument(
