@@ -94,6 +94,7 @@ def parsing_args() -> argparse.Namespace:
         default=[os.getcwd()],
         help="Select desired directory or files, default is $PWD.",
     )
+
     parser.add_argument(
         "-a",
         "--all",
@@ -109,12 +110,20 @@ def parsing_args() -> argparse.Namespace:
         choices=["default", "s", "m", "h", "d"],
     )
 
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        help="Show duration of videos in directories and their contents recursively",
+        action="store_true",
+    )
+
     group_vq.add_argument(
         "-v",
         "--verbose",
         help="show all of the video's duration too.",
         action="store_true",
     )
+
     group_vq.add_argument(
         "-q",
         "--quiet",
@@ -130,7 +139,6 @@ def parsing_args() -> argparse.Namespace:
     )
 
     group_sr.add_argument(
-        "-r",
         "--reverse",
         help="In verbose mode this option make the output sorted in descending order",
         action="store_true",
@@ -206,13 +214,21 @@ async def main() -> int:
         files = ARGS.path_file
     else:
         if os.path.isdir((directory := ARGS.path_file[0])):
-            os.chdir(directory)
-            files = os.listdir()
+            if ARGS.recursive:
+                files = [
+                    os.path.join(path, file)
+                    for path, _, files_list in os.walk(top=directory)
+                    for file in files_list
+                ]
+                # print(files)
+            else:
+                os.chdir(directory)
+                files = [file for file in os.listdir() if os.path.isfile(file)]
         else:  # in case of a single invalid argument (e.g. viddur fake) we should fail.
             raise NotADirectoryError(f"{directory!r} is not a valid directory.")
 
     tasks = [
-        asyncio.create_task(calc(file)) for file in files if os.path.isfile(file)
+        asyncio.create_task(calc(file)) for file in files
     ]  # the if statement is necessary because there's a possibility of existence of a nested directory or passing -
     # two directory names (bad user input).
     results = await asyncio.gather(*tasks)
