@@ -9,6 +9,7 @@
 import argparse
 import asyncio
 import mimetypes
+import multiprocessing
 import os
 import shutil
 import sys
@@ -18,7 +19,9 @@ import time
 TOTAL = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
-SEM_NUM = 25  # Semaphore number for limiting simultaneously open files.
+SEM_NUM = (
+    multiprocessing.cpu_count()
+)  # Semaphore number for limiting simultaneously open files.
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 )
@@ -40,7 +43,10 @@ def pretty_print(
     """
     Shortening and printing output based on terminal width.
     """
-    width = os.get_terminal_size()[0]
+    try:
+        width = os.get_terminal_size()[0]
+    except OSError:  # In case of any errors we will have a default.
+        width = 80
     shorted_file_name = textwrap.shorten(
         file_name, width=max(width // 2, len(PLACEHOLDER)), placeholder=PLACEHOLDER
     )
