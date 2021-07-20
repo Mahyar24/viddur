@@ -58,11 +58,11 @@ def format_time(seconds: float) -> str:
     Format the time based of cli args. available formats are: default, Seconds, Minutes, Hours, Days.
     """
     if ARGS.format is None or ARGS.format == "default":
-        gm_time = time.gmtime(seconds)
         res = ""
-        if (day := gm_time.tm_mday) > 1:
-            res = f"{day - 1} day, "
-        return res + time.strftime("%H:%M:%S", gm_time)
+        days, remainder = divmod(seconds, 86_400)  # 24 * 60 * 60 = 86,400
+        if days > 0:
+            res = f"{int(days) - 1} day, "
+        return res + time.strftime("%H:%M:%S", time.gmtime(remainder))
     elif ARGS.format == "s":
         return f"{seconds:.3f}s"
     elif ARGS.format == "m":
