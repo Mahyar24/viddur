@@ -68,9 +68,9 @@ def format_time(seconds: float) -> str:
     elif ARGS.format == "m":
         return f"{seconds/60:.3f}m"
     elif ARGS.format == "h":
-        return f"{seconds/(60 * 60):.3f}h"
+        return f"{seconds/3_600:.3f}h"  # 60 * 60 = 3,600
     else:  # d: days for sure because parser check the arg!
-        return f"{seconds/(24 * 60 * 60):.3f}d"
+        return f"{seconds/86_400:.3f}d"  # 24 * 60 * 60 = 86,400
 
 
 def checking_args(
