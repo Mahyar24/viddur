@@ -224,7 +224,7 @@ def cleanup_inputs() -> list[str]:
     elif os.path.isdir((directory := ARGS.path_file[0])):
         if ARGS.recursive:
             files = [
-                os.path.join(path, file)
+                os.path.join(os.path.relpath(path), file)
                 for path, _, files_list in os.walk(top=directory)
                 for file in files_list
             ]
@@ -251,8 +251,8 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    ARGS = parsing_args()
     assert check_ffprobe(), '"ffprobe" is not found.'
+    ARGS = parsing_args()
     exit_code = asyncio.run(main())
     prefix = "" if ARGS.quiet else "\nTotal Time is: "
     print(prefix + format_time(TOTAL))
