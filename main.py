@@ -28,6 +28,18 @@ COMMAND = (
 # This Command is all this program based on. "ffprobe" extract the metadata of the file.
 
 
+def default_terminal_width() -> int:
+    """
+    Checking the terminal width for shortening filenames.
+    """
+    try:
+        width = os.get_terminal_size()[0]
+    except OSError:  # In case of any errors we should have a default.
+        width = 80
+
+    return width
+
+
 def check_ffprobe() -> bool:
     """
     This function check if "ffprobe" is installed or not. shutil.which is cross platform solution.
@@ -43,14 +55,11 @@ def pretty_print(
     """
     Shortening and printing output based on terminal width.
     """
-    try:
-        width = os.get_terminal_size()[0]
-    except OSError:  # In case of any errors we will have a default.
-        width = 80
+
     shorted_file_name = textwrap.shorten(
-        file_name, width=max(width // 2, len(PLACEHOLDER)), placeholder=PLACEHOLDER
+        file_name, width=max(ARGS.width // 2, len(PLACEHOLDER)), placeholder=PLACEHOLDER
     )
-    print(f"{f'{shorted_file_name!r}:':<{max(width // 4, 20)}} {detail}")
+    print(f"{f'{shorted_file_name!r}:':<{max(ARGS.width // 4, 20)}} {detail}")
 
 
 def format_time(seconds: float) -> str:
@@ -122,6 +131,22 @@ def parsing_args() -> argparse.Namespace:
         "--recursive",
         help="Show duration of videos in directories and their contents recursively",
         action="store_true",
+    )
+
+    parser.add_argument(
+        "--sem",
+        "--semaphore",
+        help="Limiting number of parallel open files.",
+        type=int,
+        default=SEM_NUM,
+    )
+
+    parser.add_argument(
+        "-w",
+        "--width",
+        help="Width of your terminal size. (for shortening filenames)",
+        type=int,
+        default=default_terminal_width(),
     )
 
     group_vq.add_argument(
@@ -257,7 +282,7 @@ def cleanup_inputs() -> list[str]:
 
 async def main() -> int:
     files = cleanup_inputs()
-    sem = asyncio.Semaphore(SEM_NUM)
+    sem = asyncio.Semaphore(ARGS.sem)
     tasks = [asyncio.create_task(calc_with_cautious(file, sem)) for file in files]
     results = await asyncio.gather(*tasks)
     if tasks:
