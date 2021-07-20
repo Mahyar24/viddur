@@ -208,6 +208,9 @@ def sorted_msgs() -> None:
 
 
 def cleanup_inputs() -> list[str]:
+    """
+    Delivering list of all files based on our parsed arguments.
+    """
     if len(ARGS.path_file) == 1 and os.path.isfile(
         ARGS.path_file[0]
     ):  # Single filename.
