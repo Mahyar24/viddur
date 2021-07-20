@@ -207,30 +207,39 @@ def sorted_msgs() -> None:
             pretty_print(k, "cannot get examined.")
 
 
-async def main() -> int:
-    if len(ARGS.path_file) > 1 or os.path.isfile(
+def cleanup_inputs() -> list[str]:
+    if len(ARGS.path_file) == 1 and os.path.isfile(
         ARGS.path_file[0]
-    ):  # Check if it's a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi) or a single filename.
+    ):  # Single filename.
         files = ARGS.path_file
-    else:
-        if os.path.isdir((directory := ARGS.path_file[0])):
-            if ARGS.recursive:
-                files = [
-                    os.path.join(path, file)
-                    for path, _, files_list in os.walk(top=directory)
-                    for file in files_list
-                ]
-                # print(files)
-            else:
-                os.chdir(directory)
-                files = [file for file in os.listdir() if os.path.isfile(file)]
-        else:  # in case of a single invalid argument (e.g. viddur fake) we should fail.
-            raise NotADirectoryError(f"{directory!r} is not a valid directory.")
+    elif (
+        len(ARGS.path_file) > 1
+    ):  # It must be a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi)
+        if all(
+            os.path.isfile(name) for name in ARGS.path_file
+        ):  # Check if all of inputs are files.
+            files = ARGS.path_file
+        else:
+            raise FileExistsError("With multiple inputs you must provide only files.")
+    elif os.path.isdir((directory := ARGS.path_file[0])):
+        if ARGS.recursive:
+            files = [
+                os.path.join(path, file)
+                for path, _, files_list in os.walk(top=directory)
+                for file in files_list
+            ]
+        else:
+            os.chdir(directory)
+            files = [file for file in os.listdir() if os.path.isfile(file)]
+    else:  # in case of a single invalid argument (e.g. viddur fake) we should fail.
+        raise NotADirectoryError(f"{directory!r} is not a valid directory or filename.")
 
-    tasks = [
-        asyncio.create_task(calc(file)) for file in files
-    ]  # the if statement is necessary because there's a possibility of existence of a nested directory or passing -
-    # two directory names (bad user input).
+    return files
+
+
+async def main() -> int:
+    files = cleanup_inputs()
+    tasks = [asyncio.create_task(calc(file)) for file in files]
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
