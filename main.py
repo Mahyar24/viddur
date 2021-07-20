@@ -15,6 +15,7 @@ import shutil
 import sys
 import textwrap
 import time
+from typing import Iterator, Union
 
 TOTAL = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
@@ -247,7 +248,7 @@ def sorted_msgs() -> None:
             pretty_print(k, "cannot get examined.")
 
 
-def cleanup_inputs() -> list[str]:
+def cleanup_inputs() -> Union[list[str], Iterator[str]]:
     """
     Delivering list of all files based on our parsed arguments.
     """
@@ -266,14 +267,14 @@ def cleanup_inputs() -> list[str]:
             raise FileExistsError("With multiple inputs you must provide only files.")
     elif os.path.isdir((directory := ARGS.path_file[0])):
         if ARGS.recursive:
-            files = [
+            files = (
                 os.path.join(os.path.relpath(path), file)
                 for path, _, files_list in os.walk(top=directory)
                 for file in files_list
-            ]
+            )
         else:
             os.chdir(directory)
-            files = [file for file in os.listdir() if os.path.isfile(file)]
+            files = (file for file in os.listdir() if os.path.isfile(file))
     else:  # in case of a single invalid argument (e.g. viddur fake) we should fail.
         raise NotADirectoryError(f"{directory!r} is not a valid directory or filename.")
 
