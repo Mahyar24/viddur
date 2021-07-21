@@ -78,13 +78,13 @@ def format_time(seconds: float) -> str:
             res = f"{int(days)} day, "
         return res + time.strftime("%H:%M:%S", time.gmtime(remainder))
     elif ARGS.format == "s":
-        return f"{seconds:.3f}s"
+        return f"{seconds:,.3f}s"
     elif ARGS.format == "m":
-        return f"{seconds/60:.3f}m"
+        return f"{seconds/60:,.3f}m"
     elif ARGS.format == "h":
-        return f"{seconds/3_600:.3f}h"  # 60 * 60 = 3,600
+        return f"{seconds/3_600:,.3f}h"  # 60 * 60 = 3,600
     else:  # d: days for sure because parser check the arg!
-        return f"{seconds/86_400:.3f}d"  # 24 * 60 * 60 = 86,400
+        return f"{seconds/86_400:,.3f}d"  # 24 * 60 * 60 = 86,400
 
 
 def checking_args(
