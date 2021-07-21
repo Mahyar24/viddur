@@ -87,12 +87,11 @@ def format_time(seconds: float) -> str:
         return f"{seconds/86_400:,.3f}d"  # 24 * 60 * 60 = 86,400
 
 
-def checking_args(
-    args: argparse.Namespace, parser: argparse.ArgumentParser
-) -> argparse.Namespace:
+def checking_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     """
     if Reversed or Sorted argument was passed without Verbose arg activated, throw an error.
     """
+    args = parser.parse_args()
     if not args.verbose:
         if args.sort or args.reverse:
             parser.error(
@@ -187,7 +186,7 @@ def parsing_args() -> argparse.Namespace:
         action="store_true",
     )
 
-    return checking_args(parser.parse_args(), parser)
+    return checking_args(parser)
 
 
 async def calc(file: str) -> int:
