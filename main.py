@@ -118,7 +118,8 @@ def parsing_args() -> argparse.Namespace:
     parser.add_argument(
         "-a",
         "--all",
-        help="Program doesn't suggest mime types and take all files as videos.",
+        help="Program doesn't suggest mime types and take all files as videos. "
+        "(You should be aware of that 'ffprobe' might recognize weird files duration too)",
         action="store_true",
     )
 
