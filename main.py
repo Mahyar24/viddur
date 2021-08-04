@@ -21,7 +21,7 @@ TOTAL = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
 SEM_NUM = (
-    multiprocessing.cpu_count()
+    multiprocessing.cpu_count() * 2
 )  # Semaphore number for limiting simultaneously open files.
 COMMAND = (
     'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
