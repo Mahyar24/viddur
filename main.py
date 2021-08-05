@@ -69,7 +69,7 @@ def pretty_print(
 
 def format_time(seconds: float) -> str:
     """
-    Format the time based of cli args. available formats are: default, Seconds, Minutes, Hours, Days.
+    Format the time based on cli args. available formats are: default, Seconds, Minutes, Hours, Days.
     """
     if ARGS.format is None or ARGS.format == "default":
         res = ""
