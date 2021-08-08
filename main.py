@@ -1,10 +1,11 @@
 #! /usr/bin/python3.9
 
-# Run this code for see the summed duration of videos.
-# Compatible with python3.9+. No third-party library is required, implemented in pure python.
-# Make sure that you have required permissions and "ffprobe" is already installed.
-# Mahyar@Mahyar24.com, Fri 11 Jun 2021.
-
+"""
+Run this code for see the summed duration of videos.
+Compatible with python3.9+. No third-party library is required, implemented in pure python.
+Make sure that you have required permissions and "ffprobe" is already installed.
+Mahyar@Mahyar24.com, Fri 11 Jun 2021.
+"""
 
 import argparse
 import asyncio
@@ -15,7 +16,7 @@ import shutil
 import sys
 import textwrap
 import time
-from typing import Iterator, Union
+from typing import Iterator, Literal, Union
 
 TOTAL = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
@@ -69,7 +70,8 @@ def pretty_print(
 
 def format_time(seconds: float) -> str:
     """
-    Format the time based on cli args. available formats are: default, Seconds, Minutes, Hours, Days.
+    Format the time based on cli args. available formats are:
+    default, Seconds, Minutes, Hours, Days.
     """
     if ARGS.format is None or ARGS.format == "default":
         res = ""
@@ -77,14 +79,14 @@ def format_time(seconds: float) -> str:
         if days > 0:
             res = f"{int(days)} day, "
         return res + time.strftime("%H:%M:%S", time.gmtime(remainder))
-    elif ARGS.format == "s":
+    if ARGS.format == "s":
         return f"{seconds:,.3f}s"
-    elif ARGS.format == "m":
+    if ARGS.format == "m":
         return f"{seconds/60:,.3f}m"
-    elif ARGS.format == "h":
+    if ARGS.format == "h":
         return f"{seconds/3_600:,.3f}h"  # 60 * 60 = 3,600
-    else:  # d: days for sure because parser check the arg!
-        return f"{seconds/86_400:,.3f}d"  # 24 * 60 * 60 = 86,400
+    # d: days for sure because parser check the arg!
+    return f"{seconds/86_400:,.3f}d"  # 24 * 60 * 60 = 86,400
 
 
 def checking_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
@@ -190,27 +192,38 @@ def parsing_args() -> argparse.Namespace:
     return checking_args(parser)
 
 
-async def calc(file: str) -> int:
+async def find_duration(file: str) -> Union[float, Literal[False]]:
     """
-    Get a filename and extract the duration of it. it will return 0 for successful operation and 1 for failure.
+    Get a filename and extract the duration of it. it will return False for failure.
+    """
+    process = await asyncio.subprocess.create_subprocess_shell(
+        COMMAND.format(file),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    stdout, _ = await process.communicate()
+
+    if (
+        not process.returncode and stdout != b"N/A\n" and (res := float(stdout))
+    ):  # In some cases ffprobe return a successful 0 code but the duration is N/A.
+        # furthermore if duration of file is "0" then there is something wrong!
+        return res
+    return False
+
+
+async def handle(file: str) -> int:
+    """
+    Get a filename and based on the result of processing it, print of store and return status code.
     """
     global TOTAL
     global FILES_DUR
 
     mime_guess = mimetypes.guess_type(file)[0]
     if ARGS.all or (mime_guess is not None and mime_guess.split("/")[0] == "video"):
-        process = await asyncio.subprocess.create_subprocess_shell(
-            COMMAND.format(file),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-        stdout, _ = await process.communicate()
-
-        if (
-            not process.returncode and stdout != b"N/A\n"
-        ):  # In some cases ffprobe return a successful 0 code but the duration is N/A.
-            duration = float(stdout)
-            TOTAL += float(stdout)
+        result = await find_duration(file)
+        if result:
+            duration = result
+            TOTAL += duration
 
             if ARGS.verbose:
                 if not (ARGS.sort or ARGS.reverse):
@@ -218,25 +231,23 @@ async def calc(file: str) -> int:
                 else:
                     FILES_DUR[file] = duration
             return 0
+        if not ARGS.quiet:
+            pretty_print(file, "cannot get examined.")
+        return 1
+    if ARGS.verbose:
+        if not (ARGS.sort or ARGS.reverse):
+            pretty_print(file, "is not recognized as a media.")
         else:
-            if not ARGS.quiet:
-                pretty_print(file, "cannot get examined.")
-            return 1
-    else:
-        if ARGS.verbose:
-            if not (ARGS.sort or ARGS.reverse):
-                pretty_print(file, "is not recognized as a media.")
-            else:
-                FILES_DUR[file] = False
-        return 0
+            FILES_DUR[file] = False
+    return 0
 
 
-async def calc_with_cautious(file: str, sem: asyncio.locks.Semaphore) -> int:
+async def handle_with_cautious(file: str, sem: asyncio.locks.Semaphore) -> int:
     """
     Calculate length of file with cautious of not opening too much file at the same time.
     """
     async with sem:
-        return await calc(file)
+        return await handle(file)
 
 
 def sorted_msgs() -> None:
@@ -251,11 +262,11 @@ def sorted_msgs() -> None:
             reverse=ARGS.reverse,
         )
     }
-    for k, v in sorted_dict.items():
-        if v:
-            pretty_print(k, format_time(v))
+    for key, value in sorted_dict.items():
+        if value:
+            pretty_print(key, format_time(value))
         else:
-            pretty_print(k, "cannot get examined.")
+            pretty_print(key, "cannot get examined.")
 
 
 def cleanup_inputs() -> Union[list[str], Iterator[str]]:
@@ -292,9 +303,12 @@ def cleanup_inputs() -> Union[list[str], Iterator[str]]:
 
 
 async def main() -> int:
+    """
+    main function.
+    """
     files = cleanup_inputs()
     sem = asyncio.Semaphore(ARGS.sem)
-    tasks = [asyncio.create_task(calc_with_cautious(file, sem)) for file in files]
+    tasks = [asyncio.create_task(handle_with_cautious(file, sem)) for file in files]
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
@@ -309,6 +323,6 @@ if __name__ == "__main__":
     assert check_ffprobe(), '"ffprobe" is not found.'
     ARGS = parsing_args()
     exit_code = asyncio.run(main())
-    prefix = "" if ARGS.quiet else "\nTotal Time is: "
-    print(prefix + format_time(TOTAL))
+    PREFIX = "" if ARGS.quiet else "\nTotal Time is: "
+    print(PREFIX + format_time(TOTAL))
     sys.exit(exit_code)
