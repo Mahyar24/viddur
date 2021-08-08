@@ -211,7 +211,7 @@ async def find_duration(file: str) -> Union[float, Literal[False]]:
     return False
 
 
-async def handle(file: str) -> int:
+async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
     """
     Get a filename and based on the result of processing it, print of store and return status code.
     """
@@ -220,11 +220,11 @@ async def handle(file: str) -> int:
 
     mime_guess = mimetypes.guess_type(file)[0]
     if ARGS.all or (mime_guess is not None and mime_guess.split("/")[0] == "video"):
-        result = await find_duration(file)
+        async with sem:  # With cautious of not opening too much file at the same time.
+            result = await find_duration(file)
         if result:
             duration = result
             TOTAL += duration
-
             if ARGS.verbose:
                 if not (ARGS.sort or ARGS.reverse):
                     pretty_print(file, format_time(duration))
@@ -240,14 +240,6 @@ async def handle(file: str) -> int:
         else:
             FILES_DUR[file] = False
     return 0
-
-
-async def handle_with_cautious(file: str, sem: asyncio.locks.Semaphore) -> int:
-    """
-    Calculate length of file with cautious of not opening too much file at the same time.
-    """
-    async with sem:
-        return await handle(file)
 
 
 def sorted_msgs() -> None:
@@ -304,7 +296,7 @@ async def main() -> int:
     """
     files = cleanup_inputs()
     sem = asyncio.Semaphore(ARGS.sem)
-    tasks = [asyncio.create_task(handle_with_cautious(file, sem)) for file in files]
+    tasks = [asyncio.create_task(handle(file, sem)) for file in files]
     results = await asyncio.gather(*tasks)
     if tasks:
         if ARGS.sort or ARGS.reverse:
