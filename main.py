@@ -254,14 +254,10 @@ def sorted_msgs() -> None:
     """
     Printing Sorted durations.
     """
-    sorted_dict = {
-        k: v
-        for k, v in sorted(
-            FILES_DUR.items(),
-            key=lambda x: x[1],
-            reverse=ARGS.reverse,
-        )
-    }
+    # noinspection PyTypeChecker
+    sorted_dict = dict(
+        sorted(FILES_DUR.items(), key=lambda item: item[1], reverse=ARGS.reverse)
+    )
     for key, value in sorted_dict.items():
         if value:
             pretty_print(key, format_time(value))
