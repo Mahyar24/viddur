@@ -204,7 +204,7 @@ async def find_duration(file: str) -> Union[float, Literal[False]]:
     """
     Get a filename and extract the duration of it. it will return False for failure.
     """
-    process = await asyncio.subprocess.create_subprocess_shell(
+    process = await asyncio.create_subprocess_exec(
         COMMAND.format(file),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
