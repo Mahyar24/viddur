@@ -4,6 +4,7 @@
 Run this code for see the summed duration of videos.
 Compatible with python3.9+. No third-party library is required, implemented in pure python.
 Make sure that you have required permissions and "ffprobe" is already installed.
+Consider using "uvloop" and increase the semaphore number to make the program run faster.
 Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 """
 
@@ -18,7 +19,14 @@ import textwrap
 import time
 from typing import Iterator, Literal, Union
 
-TOTAL = 0.0  # Global variables are async safe.
+try:  # If there is uvloop available, use it as event loop.
+    import uvloop
+except ImportError:
+    pass
+else:
+    uvloop.install()
+
+TOTAL: float = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
 SEM_NUM = (
@@ -292,7 +300,7 @@ def cleanup_inputs() -> Union[list[str], Iterator[str]]:
 
 async def main() -> int:
     """
-    main function.
+    main function. This program is CLI based and you shouldn't run it as a package.
     """
     files = cleanup_inputs()
     sem = asyncio.Semaphore(ARGS.sem)
