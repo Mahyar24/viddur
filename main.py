@@ -4,6 +4,7 @@
 Run this code for see the summed duration of videos.
 Compatible with python3.9+. No third-party library is required, implemented in pure python.
 Make sure that you have required permissions and "ffprobe" is already installed.
+If Some file has a length of zero, this program act with it as a failure.
 Consider using "uvloop" and increase the semaphore number to make the program run faster.
 Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 """
@@ -26,7 +27,6 @@ except ImportError:
 else:
     uvloop.install()
 
-TOTAL: float = 0.0  # Global variables are async safe.
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
 SEM_NUM = (
@@ -223,8 +223,6 @@ async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
     """
     Get a filename and based on the result of processing it, print of store and return status code.
     """
-    global TOTAL
-    global FILES_DUR
 
     mime_guess = mimetypes.guess_type(file)[0]
     if ARGS.all or (mime_guess is not None and mime_guess.split("/")[0] == "video"):
@@ -232,12 +230,10 @@ async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
             result = await find_duration(file)
         if result:
             duration = result
-            TOTAL += duration
+            FILES_DUR[file] = duration
             if ARGS.verbose:
                 if not (ARGS.sort or ARGS.reverse):
                     pretty_print(file, format_time(duration))
-                else:
-                    FILES_DUR[file] = duration
             return 0
         if not ARGS.quiet:
             pretty_print(file, "cannot get examined.")
@@ -246,7 +242,7 @@ async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
         if not (ARGS.sort or ARGS.reverse):
             pretty_print(file, "is not recognized as a media.")
         else:
-            FILES_DUR[file] = False
+            FILES_DUR[file] = 0.0  # same as `FILES_DUR[file] = False`
     return 0
 
 
@@ -261,7 +257,7 @@ def sorted_msgs() -> None:
     for key, value in sorted_dict.items():
         if value:
             pretty_print(key, format_time(value))
-        else:
+        else:  # if value == 0.0, this is a failure.
             pretty_print(key, "cannot get examined.")
 
 
@@ -320,5 +316,5 @@ if __name__ == "__main__":
     ARGS = parsing_args()
     exit_code = asyncio.run(main())
     PREFIX = "" if ARGS.quiet else "\nTotal Time is: "
-    print(PREFIX + format_time(TOTAL))
+    print(PREFIX + format_time(sum(FILES_DUR.values())))
     sys.exit(exit_code)
