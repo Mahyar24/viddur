@@ -5,7 +5,7 @@ Run this code for see the summed duration of videos.
 Compatible with python3.9+. No third-party library is required, implemented in pure python.
 Make sure that you have required permissions and "ffprobe" is already installed.
 If Some file has a length of zero, this program act with it as a failure.
-Consider using "uvloop" and increase the semaphore number to make the program run faster.
+Consider using "uvloop" and increase the semaphore number to make the program runs faster.
 Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 """
 
@@ -236,7 +236,10 @@ async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
                     pretty_print(file, format_time(duration))
             return 0
         if not ARGS.quiet:
-            pretty_print(file, "cannot get examined.")
+                if not (ARGS.sort or ARGS.reverse):
+                    pretty_print(file, "cannot get examined.")
+                else:
+                    FILES_DUR[file] = 0.0
         return 1
     if ARGS.verbose:
         if not (ARGS.sort or ARGS.reverse):
