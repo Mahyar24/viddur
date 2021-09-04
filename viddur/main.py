@@ -4,18 +4,18 @@
 Run this code for see the summed duration of videos.
 Compatible with python3.9+. No third-party library is required, implemented in pure python.
 Make sure that you have required permissions and "ffprobe" is already installed.
+-> https://ffmpeg.org/ffprobe.html
 If Some file has a length of zero, this program act with it as a failure.
 Consider using "uvloop" and increase the semaphore number to make the program runs faster.
 Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 """
 
 import argparse
-import asyncio
+import asyncio  # TODO: Cancellation.
 import mimetypes
 import multiprocessing
 import os
 import shutil
-import sys
 import textwrap
 import time
 from typing import Iterator, Literal, Union
@@ -26,6 +26,9 @@ except ImportError:
     pass
 else:
     uvloop.install()
+
+
+__all__ = ["main", "check_ffprobe"]
 
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
@@ -60,38 +63,38 @@ def check_ffprobe() -> bool:
 
 
 def pretty_print(
-    file_name: str, detail: str
+    file_name: str, detail: str, args: argparse.Namespace
 ) -> None:  # One Alternative is to use Rich; but i want to keep it simple and independent.
     """
     Shortening and printing output based on terminal width.
     """
-    if ARGS.simple_output:
+    if args.simple_output:
         print(f"{file_name}: {detail}")
     else:
         shorted_file_name = textwrap.shorten(
             file_name,
-            width=max(ARGS.width // 2, len(PLACEHOLDER)),
+            width=max(args.width // 2, len(PLACEHOLDER)),
             placeholder=PLACEHOLDER,
         )
-        print(f"{f'{shorted_file_name!r}:':<{max(ARGS.width // 4, 20)}} {detail}")
+        print(f"{f'{shorted_file_name!r}:':<{max(args.width // 4, 20)}} {detail}")
 
 
-def format_time(seconds: float) -> str:
+def format_time(seconds: float, args: argparse.Namespace) -> str:
     """
     Format the time based on cli args. available formats are:
     default, Seconds, Minutes, Hours, Days.
     """
-    if ARGS.format is None or ARGS.format == "default":
+    if args.format is None or args.format == "default":
         res = ""
         days, remainder = divmod(seconds, 86_400)  # 24 * 60 * 60 = 86,400
         if days > 0:
             res = f"{int(days)} day, "
         return res + time.strftime("%H:%M:%S", time.gmtime(remainder))
-    if ARGS.format == "s":
+    if args.format == "s":
         return f"{seconds:,.3f}s"
-    if ARGS.format == "m":
+    if args.format == "m":
         return f"{seconds/60:,.3f}m"
-    if ARGS.format == "h":
+    if args.format == "h":
         return f"{seconds/3_600:,.3f}h"  # 60 * 60 = 3,600
     # d: days for sure because parser check the arg!
     return f"{seconds/86_400:,.3f}d"  # 24 * 60 * 60 = 86,400
@@ -219,70 +222,72 @@ async def find_duration(file: str) -> Union[float, Literal[False]]:
     return False
 
 
-async def handle(file: str, sem: asyncio.locks.Semaphore) -> int:
+async def handle(
+    file: str, sem: asyncio.locks.Semaphore, args: argparse.Namespace
+) -> int:
     """
     Get a filename and based on the result of processing it, print of store and return status code.
     """
 
     mime_guess = mimetypes.guess_type(file)[0]
-    if ARGS.all or (mime_guess is not None and mime_guess.split("/")[0] == "video"):
+    if args.all or (mime_guess is not None and mime_guess.split("/")[0] == "video"):
         async with sem:  # With cautious of not opening too much file at the same time.
             result = await find_duration(file)
         if result:
             duration = result
             FILES_DUR[file] = duration
-            if ARGS.verbose:
-                if not (ARGS.sort or ARGS.reverse):
-                    pretty_print(file, format_time(duration))
+            if args.verbose:
+                if not (args.sort or args.reverse):
+                    pretty_print(file, format_time(duration, args), args)
             return 0
-        if not ARGS.quiet:
-                if not (ARGS.sort or ARGS.reverse):
-                    pretty_print(file, "cannot get examined.")
-                else:
-                    FILES_DUR[file] = 0.0
+        if not args.quiet:
+            if not (args.sort or args.reverse):
+                pretty_print(file, "cannot get examined.", args)
+            else:
+                FILES_DUR[file] = 0.0
         return 1
-    if ARGS.verbose:
-        if not (ARGS.sort or ARGS.reverse):
-            pretty_print(file, "is not recognized as a media.")
+    if args.verbose:
+        if not (args.sort or args.reverse):
+            pretty_print(file, "is not recognized as a media.", args)
         else:
             FILES_DUR[file] = 0.0  # same as `FILES_DUR[file] = False`
     return 0
 
 
-def sorted_msgs() -> None:
+def sorted_msgs(args: argparse.Namespace) -> None:
     """
     Printing Sorted durations.
     """
     # noinspection PyTypeChecker
     sorted_dict = dict(
-        sorted(FILES_DUR.items(), key=lambda item: item[1], reverse=ARGS.reverse)
+        sorted(FILES_DUR.items(), key=lambda item: item[1], reverse=args.reverse)
     )
     for key, value in sorted_dict.items():
         if value:
-            pretty_print(key, format_time(value))
+            pretty_print(key, format_time(value, args), args)
         else:  # if value == 0.0, this is a failure.
-            pretty_print(key, "cannot get examined.")
+            pretty_print(key, "cannot get examined.", args)
 
 
-def cleanup_inputs() -> Union[list[str], Iterator[str]]:
+def cleanup_inputs(args: argparse.Namespace) -> Union[list[str], Iterator[str]]:
     """
     Delivering list of all files based on our parsed arguments.
     """
-    if len(ARGS.path_file) == 1 and os.path.isfile(
-        ARGS.path_file[0]
+    if len(args.path_file) == 1 and os.path.isfile(
+        args.path_file[0]
     ):  # Single filename.
-        files = ARGS.path_file
+        files = args.path_file
     elif (
-        len(ARGS.path_file) > 1
+        len(args.path_file) > 1
     ):  # It must be a list of files (e.g. 1.mkv 2.mp4) or a wildcard (e.g. *.avi)
         if all(
-            os.path.isfile(name) for name in ARGS.path_file
+            os.path.isfile(name) for name in args.path_file
         ):  # Check if all of inputs are files.
-            files = ARGS.path_file
+            files = args.path_file
         else:
             raise FileExistsError("With multiple inputs you must provide only files.")
-    elif os.path.isdir((directory := ARGS.path_file[0])):
-        if ARGS.recursive:
+    elif os.path.isdir((directory := args.path_file[0])):
+        if args.recursive:
             files = (
                 os.path.join(os.path.relpath(path), file)
                 for path, _, files_list in os.walk(top=directory)
@@ -301,23 +306,22 @@ async def main() -> int:
     """
     main function. This program is CLI based and you shouldn't run it as a package.
     """
-    files = cleanup_inputs()
-    sem = asyncio.Semaphore(ARGS.sem)
-    tasks = [asyncio.create_task(handle(file, sem)) for file in files]
+    args = parsing_args()
+    files = cleanup_inputs(args)
+    sem = asyncio.Semaphore(args.sem)
+    tasks = [asyncio.create_task(handle(file, sem, args)) for file in files]
     results = await asyncio.gather(*tasks)
+
     if tasks:
-        if ARGS.sort or ARGS.reverse:
-            sorted_msgs()
-        return any(
-            results
+        if args.sort or args.reverse:
+            sorted_msgs(args)
+        exit_code = int(
+            any(results)
         )  # Check to see if any of the checked file is failed; for the return code.
-    return 1  # bad arguments -> returning failure return code.
+    else:  # bad arguments -> returning failure return code.
+        exit_code = 1
 
+    prefix = "" if args.quiet else "\nTotal Time is: "
+    print(prefix + format_time(sum(FILES_DUR.values()), args))
 
-if __name__ == "__main__":
-    assert check_ffprobe(), '"ffprobe" is not found.'
-    ARGS = parsing_args()
-    exit_code = asyncio.run(main())
-    PREFIX = "" if ARGS.quiet else "\nTotal Time is: "
-    print(PREFIX + format_time(sum(FILES_DUR.values())))
-    sys.exit(exit_code)
+    return exit_code
