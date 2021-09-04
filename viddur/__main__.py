@@ -12,6 +12,10 @@ from main import check_ffprobe, main
 
 if __name__ == "__main__":
     assert check_ffprobe(), '"ffprobe" is not found.'
-    exit_code = asyncio.run(main())
-
-    sys.exit(exit_code)
+    try:
+        EXIT_CODE = asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Exiting ...")
+        EXIT_CODE = 1
+    else:
+        sys.exit(EXIT_CODE)
