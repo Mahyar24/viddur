@@ -117,3 +117,101 @@ async def test_handle(
         assert out != ""
     else:
         assert out == ""
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_without_argument(mocked_directory, mocked_raw_args):
+    mocked_raw_args.path_file = [viddur.os.getcwd()]
+    result = viddur.cleanup_inputs(mocked_raw_args)
+    assert list(result) == [
+        "pwd_bad_1.mp3",
+        "pwd_bad_2.pdf",
+        "pwd_correct_1.mp4",
+        "pwd_correct_2.mkv",
+    ]
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_one_file(mocked_directory, mocked_raw_args):
+    mocked_raw_args.path_file = ["pwd_correct_1.mp4"]
+    result = viddur.cleanup_inputs(mocked_raw_args)
+    assert list(result) == mocked_raw_args.path_file
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_two_file(mocked_directory, mocked_raw_args):
+    mocked_raw_args.path_file = ["pwd_correct_1.mp4", "pwd_bad_1.mp3"]
+    result = viddur.cleanup_inputs(mocked_raw_args)
+    assert list(result) == mocked_raw_args.path_file
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_one_dir_one_file(mocked_directory, mocked_raw_args):
+    mocked_raw_args.path_file = ["pwd_correct_1.mp4", "dir1"]
+    with pytest.raises(FileExistsError):
+        viddur.cleanup_inputs(mocked_raw_args)
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_two_dirs(mocked_directory, mocked_raw_args):
+    mocked_raw_args.path_file = ["dir2", "dir1"]
+    with pytest.raises(FileExistsError):
+        viddur.cleanup_inputs(mocked_raw_args)
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_recursive_with_file(mocked_directory, mocked_raw_args):
+    mocked_raw_args.recursive = True
+    mocked_raw_args.path_file = ["pwd_correct_1.mp4"]
+    with pytest.raises(NotADirectoryError):
+        viddur.cleanup_inputs(mocked_raw_args)
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_recursive(mocked_directory, mocked_raw_args):
+    mocked_raw_args.recursive = True
+    mocked_raw_args.path_file = [viddur.os.getcwd()]
+    result = viddur.cleanup_inputs(mocked_raw_args)
+    assert list(result) == [
+        "./pwd_bad_1.mp3",
+        "./pwd_bad_2.pdf",
+        "./pwd_correct_1.mp4",
+        "./pwd_correct_2.mkv",
+        "dir2/dir2_correct_2.mkv",
+        "dir2/dir2_correct_1.mp4",
+        "dir2/dir2_bad_2.pdf",
+        "dir2/dir2_bad_1.mp3",
+        "dir1/dir1_bad_1.mp3",
+        "dir1/dir1_bad_2.pdf",
+        "dir1/dir1_correct_1.mp4",
+        "dir1/dir1_correct_2.mkv",
+        "dir1/dir3/dir3_correct_2.mkv",
+        "dir1/dir3/dir3_bad_1.mp3",
+        "dir1/dir3/dir3_bad_2.pdf",
+        "dir1/dir3/dir3_correct_1.mp4",
+    ]
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_recursive_with_dir(mocked_directory, mocked_raw_args):
+    mocked_raw_args.recursive = True
+    mocked_raw_args.path_file = ["dir1"]
+    result = viddur.cleanup_inputs(mocked_raw_args)
+    assert list(result) == [
+        "dir1/dir1_bad_1.mp3",
+        "dir1/dir1_bad_2.pdf",
+        "dir1/dir1_correct_1.mp4",
+        "dir1/dir1_correct_2.mkv",
+        "dir1/dir3/dir3_correct_2.mkv",
+        "dir1/dir3/dir3_bad_1.mp3",
+        "dir1/dir3/dir3_bad_2.pdf",
+        "dir1/dir3/dir3_correct_1.mp4",
+    ]
+
+
+@pytest.mark.cleanup_inputs
+def test_cleanup_inputs_with_bad_input(mocked_directory, mocked_raw_args):
+    mocked_raw_args.recursive = True
+    mocked_raw_args.path_file = ["unknown"]
+    with pytest.raises(NotADirectoryError):
+        viddur.cleanup_inputs(mocked_raw_args)

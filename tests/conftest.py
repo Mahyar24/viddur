@@ -84,6 +84,37 @@ def mocked_raw_args():
     return args_gen()
 
 
+@pytest.fixture()
+def mocked_directory(tmpdir):
+    pwd = tmpdir.mkdir("pwd")
+    pwd.join("pwd_correct_1.mp4").write(b"Some nonsense")
+    pwd.join("pwd_correct_2.mkv").write(b"Some nonsense")
+    pwd.join("pwd_bad_1.mp3").write(b"Some nonsense")
+    pwd.join("pwd_bad_2.pdf").write(b"Some nonsense")
+
+    dir1 = pwd.mkdir("dir1")
+    dir1.join("dir1_correct_1.mp4").write(b"Some nonsense")
+    dir1.join("dir1_correct_2.mkv").write(b"Some nonsense")
+    dir1.join("dir1_bad_1.mp3").write(b"Some nonsense")
+    dir1.join("dir1_bad_2.pdf").write(b"Some nonsense")
+
+    dir2 = pwd.mkdir("dir2")
+    dir2.join("dir2_correct_1.mp4").write(b"Some nonsense")
+    dir2.join("dir2_correct_2.mkv").write(b"Some nonsense")
+    dir2.join("dir2_bad_1.mp3").write(b"Some nonsense")
+    dir2.join("dir2_bad_2.pdf").write(b"Some nonsense")
+
+    dir3 = dir1.mkdir("dir3")
+    dir3.join("dir3_correct_1.mp4").write(b"Some nonsense")
+    dir3.join("dir3_correct_2.mkv").write(b"Some nonsense")
+    dir3.join("dir3_bad_1.mp3").write(b"Some nonsense")
+    dir3.join("dir3_bad_2.pdf").write(b"Some nonsense")
+
+    _ = dir3.mkdir("dir4")
+
+    viddur.os.chdir(pwd)
+
+
 class MockedParser:
     def __init__(self, return_value):
         self.return_value = return_value

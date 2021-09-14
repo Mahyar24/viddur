@@ -273,6 +273,12 @@ def cleanup_inputs(args: argparse.Namespace) -> Union[list[str], Iterator[str]]:
     """
     Delivering list of all files based on our parsed arguments.
     """
+    if args.recursive:  # Asserting for bad use of --recursive option.
+        if len(args.path_file) != 1 or not os.path.isdir(args.path_file[0]):
+            raise NotADirectoryError(
+                "with --recursive option, you should specify only one directory."
+            )
+
     if len(args.path_file) == 1 and os.path.isfile(
         args.path_file[0]
     ):  # Single filename.
