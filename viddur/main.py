@@ -117,7 +117,15 @@ def parsing_args() -> argparse.Namespace:
     """
     Parsing the passed arguments, read help (-h, --help) for further information.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        epilog=textwrap.dedent(
+            """
+            Written by: Mahyar Mahdavi <Mahyar@Mahyar24.com>.
+            Source Code: https://github.com/mahyar24/viddur
+            Reporting Bugs and PRs are welcomed. :)
+            """
+        )
+    )
     group_vq = parser.add_mutually_exclusive_group()
     group_sr = parser.add_mutually_exclusive_group()
 
