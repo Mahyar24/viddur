@@ -121,7 +121,7 @@ def parsing_args() -> argparse.Namespace:
         epilog=textwrap.dedent(
             """
             Written by: Mahyar Mahdavi <Mahyar@Mahyar24.com>.
-            Source Code: https://github.com/mahyar24/viddur
+            Source Code: <https://github.com/mahyar24/viddur>.
             Reporting Bugs and PRs are welcomed. :)
             """
         )

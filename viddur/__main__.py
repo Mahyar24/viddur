@@ -17,5 +17,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Exiting ...")
         EXIT_CODE = 1
-    else:
+    finally:
         sys.exit(EXIT_CODE)
