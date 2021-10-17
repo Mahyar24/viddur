@@ -16,7 +16,7 @@ if __name__ == "__main__":
         EXIT_CODE = asyncio.run(main())
     except KeyboardInterrupt:
         print("Exiting ...")
-        EXIT_CODE = 1
-    finally:
+        sys.exit(1)
+    else:
         # noinspection PyUnboundLocalVariable
         sys.exit(EXIT_CODE)
