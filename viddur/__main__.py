@@ -10,13 +10,17 @@ import sys
 
 from source import check_ffprobe, main
 
-if __name__ == "__main__":
+
+def entry_point():
     assert check_ffprobe(), '"ffprobe" is not found.'
     try:
-        EXIT_CODE = asyncio.run(main())
+        exit_code = asyncio.run(main())
     except KeyboardInterrupt:
         print("Exiting ...")
         sys.exit(1)
     else:
-        # noinspection PyUnboundLocalVariable
-        sys.exit(EXIT_CODE)
+        sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    entry_point()
