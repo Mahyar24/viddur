@@ -3,7 +3,14 @@ name = "viddur"
 version = "0.1.0"
 description = "Calculating and viewing the durations of videos."
 authors = ["Mahyar Mahdavi <Mahyar@Mahyar24.com>"]
-license = "GNU GPLv3"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+repository = "https://github.com/Mahyar24/viddur"
+keywords = [
+    "FFprobe",
+    "viddur",
+    "video duration"
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +22,9 @@ isort = "^5.9.3"
 mypy = "^0.910"
 pytest-asyncio = "^0.15.1"
 pylint = "^2.10.2"
+
+[tool.poetry.scripts]
+viddur = "viddur.__main__"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
