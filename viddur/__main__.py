@@ -8,7 +8,7 @@ Mahyar@Mahyar24.com, Fri 11 Jun 2021.
 import asyncio
 import sys
 
-from source import check_ffprobe, main
+from .source import check_ffprobe, main
 
 
 def entry_point():

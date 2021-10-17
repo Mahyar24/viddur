@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "viddur"
-version = "0.1.0"
+version = "0.1.1"
 description = "Calculating and viewing the durations of videos."
 authors = ["Mahyar Mahdavi <Mahyar@Mahyar24.com>"]
 license = "GPL-3.0-or-later"
