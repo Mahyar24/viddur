@@ -32,13 +32,10 @@ __all__ = ["main", "check_ffprobe"]
 
 PLACEHOLDER = " ..."  # For pretty printing.
 FILES_DUR: dict[str, float] = {}
-SEM_NUM = (
-    multiprocessing.cpu_count() * 2
-)  # Semaphore number for limiting simultaneously open files.
-COMMAND = (
-    'ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
-)
+# Semaphore number for limiting simultaneously open files.
+SEM_NUM = multiprocessing.cpu_count() * 2
 # This Command is all this program based on. "ffprobe" extract the metadata of the file.
+COMMAND = 'ffprobe -hide_banner -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{}"'
 
 
 def default_terminal_width() -> int:
@@ -121,6 +118,7 @@ def parsing_args() -> argparse.Namespace:
         epilog=textwrap.dedent(
             """
             Written by: Mahyar Mahdavi <Mahyar@Mahyar24.com>.
+            License: GNU GPLv3.
             Source Code: <https://github.com/mahyar24/viddur>.
             Reporting Bugs and PRs are welcomed. :)
             """

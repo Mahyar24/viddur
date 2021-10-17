@@ -9,7 +9,7 @@ from conftest import (
     handle_params,
 )
 
-import viddur.main as viddur
+import viddur.source as viddur
 
 
 def test_default_terminal_width():

@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import viddur.main as viddur
+import viddur.source as viddur
 
 
 def args_gen():
