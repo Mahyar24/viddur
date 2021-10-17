@@ -1,4 +1,4 @@
-# Foobar
+# viddur
 
 Calculating and viewing the durations of videos.
 
