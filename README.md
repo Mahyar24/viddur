@@ -7,7 +7,7 @@ Calculating and viewing the durations of videos.
 First, you need to install "FFprobe". Then, use the package manager [pip](https://pip.pypa.io/en/stable/) to install viddur.
 
 ```bash
-sudo apt-get install ffmpeg && pip install viddur;
+sudo apt-get install ffmpeg && python3.9 -m pip install viddur;
 ```
 
 ## Usage
